@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="RealmKit-annotations-1.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../RealmKit-annotations/build/libs/RealmKit-annotations-1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
