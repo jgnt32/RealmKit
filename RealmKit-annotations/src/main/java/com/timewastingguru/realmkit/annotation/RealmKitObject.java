@@ -8,7 +8,8 @@ import java.lang.annotation.Target;
 /**
  * Created by artoymtkachenko on 14.05.15.
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.TYPE})
 public @interface RealmKitObject {
+
 }

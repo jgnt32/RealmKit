@@ -8,7 +8,6 @@ import android.view.MenuItem;
 import com.timewastingguru.realmkit.annotation.Connect;
 import com.timewastingguru.realmkit.annotation.RealmKitObject;
 
-@RealmKitObject
 public class MainActivity extends ActionBarActivity {
 
     @Connect(field = "mOlolol")

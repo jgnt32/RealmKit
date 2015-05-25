@@ -23,10 +23,12 @@
       <library name="Gradle: RealmKit-annotations-1.0">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/libs/RealmKit-annotations-1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/libs/RealmKit-annotations-1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" exported="" name="Gradle: io.realm:realm-android:0.80.1" level="project" />
   </component>
 </module>

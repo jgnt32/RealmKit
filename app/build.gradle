@@ -49,5 +49,6 @@ dependencies {
    // apt files('../RealmKit/build/libs/RealmKit-1.0.jar')
     compile files('../RealmKit-annotations/build/libs/RealmKit-annotations-1.0.jar')
     compile 'com.squareup:javapoet:1.0.0'
+    compile 'io.realm:realm-android:0.80.1'
 
 }
