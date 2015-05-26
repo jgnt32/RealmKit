@@ -46,8 +46,6 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
-
-
     }
 
 //    @Override
@@ -92,31 +90,22 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             }
             boolean success = metadata.generateMetaData(processingEnv.getMessager());
 
-
             ClassName obj = ClassName.get(metadata.getFullyQualifiedClassName().replace("."+metadata.getSimpleClassName(), ""), metadata.getSimpleClassName());
             Name primaryKey = metadata.getPrimaryKey().getSimpleName();
 
-
-
             MethodSpec updateMethod = generateCreateOrUpdateMethod(metadata, obj, primaryKey);
             MethodSpec deleteMethod = genereateDeleteMethod(metadata, obj, primaryKey);
+            MethodSpec closeMethod = generateCloseMethod();
 
             realmKit.addMethod(updateMethod);
             realmKit.addMethod(deleteMethod);
-
+            realmKit.addMethod(closeMethod);
         }
 
-        MethodSpec beginTransactionMethod = MethodSpec.methodBuilder("beginTransaction")
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("realm.beginTransaction()")
-                .build();
-
-        MethodSpec commitTransactionMethod = MethodSpec.methodBuilder("commitTransaction")
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("realm.commitTransaction()")
-                .build();
-
+        MethodSpec beginTransactionMethod = generateBeginTransactionMethod();
+        MethodSpec commitTransactionMethod = generateCommitTransactionMethod();
         MethodSpec constructor = generateConstructor();
+
         realmKit.addMethod(constructor);
         realmKit.addMethod(beginTransactionMethod);
         realmKit.addMethod(commitTransactionMethod);
@@ -132,6 +121,26 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
 
 
         return true;
+    }
+
+    private MethodSpec generateCloseMethod() {
+        return MethodSpec.methodBuilder("close")
+                .addStatement("realm.close()")
+                .build();
+    }
+
+    private MethodSpec generateCommitTransactionMethod() {
+        return MethodSpec.methodBuilder("commitTransaction")
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("realm.commitTransaction()")
+                .build();
+    }
+
+    private MethodSpec generateBeginTransactionMethod() {
+        return MethodSpec.methodBuilder("beginTransaction")
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("realm.beginTransaction()")
+                .build();
     }
 
     private MethodSpec generateConstructor() {
@@ -184,18 +193,13 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             String fieldName = field.getSimpleName().toString();
             String setter = metadata.getSetter(fieldName);
             String getter = metadata.getGetter(fieldName);
-
             if (typeUtils.isAssignable(field.asType(), realmObject)) {
                 createOrUpdate.addStatement("local.$L(updateOrCreate$L($L.$L()))", setter, getFieldType(field), simpleClassName.toLowerCase(), getter);
             } else {
                 createOrUpdate.addStatement("local.$L($L.$L())", setter, simpleClassName.toLowerCase(), getter);
             }
         }
-
-
         createOrUpdate.addStatement("return local");
-
-
         return createOrUpdate.build();
     }
 
