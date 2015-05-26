@@ -96,35 +96,25 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             ClassName obj = ClassName.get(metadata.getFullyQualifiedClassName().replace("."+metadata.getSimpleClassName(), ""), metadata.getSimpleClassName());
             Name primaryKey = metadata.getPrimaryKey().getSimpleName();
 
+
+
             MethodSpec updateMethod = generateCreateOrUpdateMethod(metadata, obj, primaryKey);
-
-            String simpleClassName = metadata.getSimpleClassName();
-            MethodSpec.Builder delete = MethodSpec.methodBuilder("delete" + simpleClassName)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(obj, simpleClassName.toLowerCase())
-                    .addParameter(boolean.class, "cascade")
-                    .addStatement("$L local = realm.where($L.class).equalTo($S, $L.$L()).findFirst()",
-                            simpleClassName, simpleClassName, primaryKey, simpleClassName.toLowerCase(), metadata.getPrimaryKeyGetter())
-                    .beginControlFlow("if (local != null)");
-
-                        for (VariableElement field : metadata.getFields()) {
-                            String fieldName = field.getSimpleName().toString();
-                            String getter = metadata.getGetter(fieldName);
-                            if (typeUtils.isAssignable(field.asType(), realmObject)) {
-                                delete.beginControlFlow("if (cascade == true)");
-                                delete.addStatement("delete$L($L.$L(), $L)", getFieldType(field), simpleClassName.toLowerCase(), getter, true);
-                                delete.endControlFlow();
-
-                            }
-                        }
-                    delete.addStatement("local.removeFromRealm()")
-                    .endControlFlow();
-            MethodSpec deleteMethod = delete.build();
+            MethodSpec deleteMethod = genereateDeleteMethod(metadata, obj, primaryKey);
 
             realmKit.addMethod(updateMethod);
             realmKit.addMethod(deleteMethod);
 
         }
+        
+        ClassName context = ClassName.get("android.content","Context");
+        MethodSpec constructor = MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(context, "context")
+                .addStatement("realm = Realm.getInstance(context)")
+                .build();
+        realmKit.addMethod(constructor);
+
+
         JavaFile javaFile = JavaFile.builder("com.timewastingguru.customannotations", realmKit.build())
                 .build();
         try {
@@ -135,6 +125,31 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
 
 
         return true;
+    }
+
+    private MethodSpec genereateDeleteMethod(ClassMetaData metadata, ClassName obj, Name primaryKey) {
+        String simpleClassName = metadata.getSimpleClassName();
+        MethodSpec.Builder delete = MethodSpec.methodBuilder("delete" + simpleClassName)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(obj, simpleClassName.toLowerCase())
+                .addParameter(boolean.class, "cascade")
+                .addStatement("$L local = realm.where($L.class).equalTo($S, $L.$L()).findFirst()",
+                        simpleClassName, simpleClassName, primaryKey, simpleClassName.toLowerCase(), metadata.getPrimaryKeyGetter())
+                .beginControlFlow("if (local != null)");
+
+        for (VariableElement field : metadata.getFields()) {
+            String fieldName = field.getSimpleName().toString();
+            String getter = metadata.getGetter(fieldName);
+            if (typeUtils.isAssignable(field.asType(), realmObject)) {
+                delete.beginControlFlow("if (cascade == true)");
+                delete.addStatement("delete$L($L.$L(), $L)", getFieldType(field), simpleClassName.toLowerCase(), getter, true);
+                delete.endControlFlow();
+
+            }
+        }
+        delete.addStatement("local.removeFromRealm()")
+        .endControlFlow();
+        return delete.build();
     }
 
     private MethodSpec generateCreateOrUpdateMethod(ClassMetaData metadata, ClassName obj, Name primaryKey) {
