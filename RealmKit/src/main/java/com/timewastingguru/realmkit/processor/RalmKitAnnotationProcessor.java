@@ -105,14 +105,21 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             realmKit.addMethod(deleteMethod);
 
         }
-        
-        ClassName context = ClassName.get("android.content","Context");
-        MethodSpec constructor = MethodSpec.constructorBuilder()
+
+        MethodSpec beginTransactionMethod = MethodSpec.methodBuilder("beginTransaction")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(context, "context")
-                .addStatement("realm = Realm.getInstance(context)")
+                .addStatement("realm.beginTransaction()")
                 .build();
+
+        MethodSpec commitTransactionMethod = MethodSpec.methodBuilder("commitTransaction")
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("realm.commitTransaction()")
+                .build();
+
+        MethodSpec constructor = generateConstructor();
         realmKit.addMethod(constructor);
+        realmKit.addMethod(beginTransactionMethod);
+        realmKit.addMethod(commitTransactionMethod);
 
 
         JavaFile javaFile = JavaFile.builder("com.timewastingguru.customannotations", realmKit.build())
@@ -125,6 +132,15 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
 
 
         return true;
+    }
+
+    private MethodSpec generateConstructor() {
+        ClassName context = ClassName.get("android.content","Context");
+        return MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(context, "context")
+                .addStatement("realm = Realm.getInstance(context)")
+                .build();
     }
 
     private MethodSpec genereateDeleteMethod(ClassMetaData metadata, ClassName obj, Name primaryKey) {
