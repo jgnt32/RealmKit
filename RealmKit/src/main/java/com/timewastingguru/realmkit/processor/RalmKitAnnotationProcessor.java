@@ -80,8 +80,6 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
         realmKit.addField(realmType, "realm", Modifier.PROTECTED, Modifier.FINAL);
 
 
-
-
         for (Element classElement : roundEnv.getElementsAnnotatedWith(RealmKitObject.class)) {
 
             // Check the annotation was applied to a Class
@@ -98,40 +96,37 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             ClassName obj = ClassName.get(metadata.getFullyQualifiedClassName().replace("."+metadata.getSimpleClassName(), ""), metadata.getSimpleClassName());
             Name primaryKey = metadata.getPrimaryKey().getSimpleName();
 
+            MethodSpec updateMethod = generateCreateOrUpdateMethod(metadata, obj, primaryKey);
+
             String simpleClassName = metadata.getSimpleClassName();
-            MethodSpec.Builder createOrUpdate = MethodSpec.methodBuilder("updateOrCreate" + simpleClassName)
+            MethodSpec.Builder delete = MethodSpec.methodBuilder("delete" + simpleClassName)
                     .addModifiers(Modifier.PUBLIC)
-                    .returns(obj)
                     .addParameter(obj, simpleClassName.toLowerCase())
+                    .addParameter(boolean.class, "cascade")
                     .addStatement("$L local = realm.where($L.class).equalTo($S, $L.$L()).findFirst()",
                             simpleClassName, simpleClassName, primaryKey, simpleClassName.toLowerCase(), metadata.getPrimaryKeyGetter())
-                    .beginControlFlow("if (local == null)")
-                    .addStatement("local = realm.createObject($L.class)", simpleClassName)
+                    .beginControlFlow("if (local != null)");
+
+                        for (VariableElement field : metadata.getFields()) {
+                            String fieldName = field.getSimpleName().toString();
+                            String getter = metadata.getGetter(fieldName);
+                            if (typeUtils.isAssignable(field.asType(), realmObject)) {
+                                delete.beginControlFlow("if (cascade == true)");
+                                delete.addStatement("delete$L($L.$L(), $L)", getFieldType(field), simpleClassName.toLowerCase(), getter, true);
+                                delete.endControlFlow();
+
+                            }
+                        }
+                    delete.addStatement("local.removeFromRealm()")
                     .endControlFlow();
+            MethodSpec deleteMethod = delete.build();
 
-            for (VariableElement field : metadata.getFields()) {
-                String fieldName = field.getSimpleName().toString();
-                String setter = metadata.getSetter(fieldName);
-                String getter = metadata.getGetter(fieldName);
-
-                if (typeUtils.isAssignable(field.asType(), realmObject)) {
-                    createOrUpdate.addStatement("local.$L(updateOrCreate$L($L.$L()))", setter, getFieldType(field), simpleClassName.toLowerCase(), getter);
-                } else {
-                    createOrUpdate.addStatement("local.$L($L.$L())", setter, simpleClassName.toLowerCase(), getter);
-                }
-            }
-
-
-            createOrUpdate.addStatement("return local");
-
-
-            MethodSpec methodSpec = createOrUpdate.build();
-            realmKit.addMethod(methodSpec);
+            realmKit.addMethod(updateMethod);
+            realmKit.addMethod(deleteMethod);
 
         }
         JavaFile javaFile = JavaFile.builder("com.timewastingguru.customannotations", realmKit.build())
                 .build();
-        
         try {
             javaFile.writeTo(filer);
         } catch (IOException e) {
@@ -140,6 +135,37 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
 
 
         return true;
+    }
+
+    private MethodSpec generateCreateOrUpdateMethod(ClassMetaData metadata, ClassName obj, Name primaryKey) {
+        String simpleClassName = metadata.getSimpleClassName();
+        MethodSpec.Builder createOrUpdate = MethodSpec.methodBuilder("updateOrCreate" + simpleClassName)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(obj)
+                .addParameter(obj, simpleClassName.toLowerCase())
+                .addStatement("$L local = realm.where($L.class).equalTo($S, $L.$L()).findFirst()",
+                        simpleClassName, simpleClassName, primaryKey, simpleClassName.toLowerCase(), metadata.getPrimaryKeyGetter())
+                .beginControlFlow("if (local == null)")
+                .addStatement("local = realm.createObject($L.class)", simpleClassName)
+                .endControlFlow();
+
+        for (VariableElement field : metadata.getFields()) {
+            String fieldName = field.getSimpleName().toString();
+            String setter = metadata.getSetter(fieldName);
+            String getter = metadata.getGetter(fieldName);
+
+            if (typeUtils.isAssignable(field.asType(), realmObject)) {
+                createOrUpdate.addStatement("local.$L(updateOrCreate$L($L.$L()))", setter, getFieldType(field), simpleClassName.toLowerCase(), getter);
+            } else {
+                createOrUpdate.addStatement("local.$L($L.$L())", setter, simpleClassName.toLowerCase(), getter);
+            }
+        }
+
+
+        createOrUpdate.addStatement("return local");
+
+
+        return createOrUpdate.build();
     }
 
     private String getFieldType(VariableElement field) {
