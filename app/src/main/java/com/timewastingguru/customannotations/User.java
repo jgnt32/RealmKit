@@ -4,6 +4,7 @@ package com.timewastingguru.customannotations;
 import com.timewastingguru.realmkit.annotation.RealmKitObject;
 
 import io.realm.RealmObject;
+import io.realm.annotations.PrimaryKey;
 import io.realm.annotations.RealmClass;
 
 /**
@@ -12,6 +13,7 @@ import io.realm.annotations.RealmClass;
 @RealmKitObject
 public class User extends RealmObject{
 
+    @PrimaryKey
     private String id;
 
     private String name;

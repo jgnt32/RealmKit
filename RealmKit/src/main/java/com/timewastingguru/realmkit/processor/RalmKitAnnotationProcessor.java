@@ -79,6 +79,9 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
 
         realmKit.addField(realmType, "realm", Modifier.PROTECTED, Modifier.FINAL);
 
+
+
+
         for (Element classElement : roundEnv.getElementsAnnotatedWith(RealmKitObject.class)) {
 
             // Check the annotation was applied to a Class
@@ -91,18 +94,17 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             }
             boolean success = metadata.generateMetaData(processingEnv.getMessager());
 
-            metadata.getFullyQualifiedClassName();
 
             ClassName obj = ClassName.get(metadata.getFullyQualifiedClassName().replace("."+metadata.getSimpleClassName(), ""), metadata.getSimpleClassName());
-
+            Name primaryKey = metadata.getPrimaryKey().getSimpleName();
 
             String simpleClassName = metadata.getSimpleClassName();
             MethodSpec.Builder createOrUpdate = MethodSpec.methodBuilder("updateOrCreate" + simpleClassName)
                     .addModifiers(Modifier.PUBLIC)
                     .returns(obj)
                     .addParameter(obj, simpleClassName.toLowerCase())
-                    .addStatement("$T id = $L.getId()", String.class, simpleClassName.toLowerCase())
-                    .addStatement("$L local = realm.where($L.class).equalTo(\"id\", id).findFirst()", simpleClassName, simpleClassName)
+                    .addStatement("$L local = realm.where($L.class).equalTo($S, $L.$L()).findFirst()",
+                            simpleClassName, simpleClassName, primaryKey, simpleClassName.toLowerCase(), metadata.getPrimaryKeyGetter())
                     .beginControlFlow("if (local == null)")
                     .addStatement("local = realm.createObject($L.class)", simpleClassName)
                     .endControlFlow();
@@ -123,11 +125,13 @@ public class RalmKitAnnotationProcessor extends AbstractProcessor {
             createOrUpdate.addStatement("return local");
 
 
-            realmKit.addMethod(createOrUpdate.build());
+            MethodSpec methodSpec = createOrUpdate.build();
+            realmKit.addMethod(methodSpec);
 
         }
         JavaFile javaFile = JavaFile.builder("com.timewastingguru.customannotations", realmKit.build())
                 .build();
+        
         try {
             javaFile.writeTo(filer);
         } catch (IOException e) {

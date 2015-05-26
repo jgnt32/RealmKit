@@ -3,6 +3,7 @@ package com.timewastingguru.customannotations;
 import com.timewastingguru.realmkit.annotation.RealmKitObject;
 
 import io.realm.RealmObject;
+import io.realm.annotations.PrimaryKey;
 
 /**
  * Created by artoymtkachenko on 25.05.15.
@@ -15,6 +16,17 @@ public class Address extends RealmObject {
     private String couuntry;
 
     private String street;
+
+    @PrimaryKey
+    private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getCity() {
         return city;

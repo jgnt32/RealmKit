@@ -36,9 +36,6 @@ public class RealmKitObjectGenerator {
                 .endControlFlow();
 
 
-
-
-
         createOrUpdate.addStatement("return local");
 
 
