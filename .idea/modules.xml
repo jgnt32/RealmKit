@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CustomAnnotations.iml" filepath="$PROJECT_DIR$/CustomAnnotations.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/realmkit/realmkit.iml" filepath="$PROJECT_DIR$/realmkit/realmkit.iml" />
     </modules>
   </component>
 </project>
